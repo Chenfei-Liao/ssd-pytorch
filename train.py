@@ -405,55 +405,7 @@ if __name__ == "__main__":
             if backbone == "vgg":
                 for param in model.vgg[:28].parameters():
                     param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd1":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd2":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd3":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd4":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "mobilenetv2_bigadd5":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model8":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model9":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model10":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model11":
-                for param in model.model.parameters():
-                    param.requires_grad = False
             elif backbone == "model12":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model13":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model14":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model15":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model16":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model20":
-                for param in model.model.parameters():
-                    param.requires_grad = False
-            elif backbone == "model24":
                 for param in model.model.parameters():
                     param.requires_grad = False
             else:
@@ -550,55 +502,7 @@ if __name__ == "__main__":
                 if backbone == "vgg":
                     for param in model.vgg[:28].parameters():
                         param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd1":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd2":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd3":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd4":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "mobilenetv2_bigadd5":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model8":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model9":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model10":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model11":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
                 elif backbone == "model12":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model13":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model14":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model15":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model16":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model20":
-                    for param in model.model.parameters():
-                        param.requires_grad = True
-                elif backbone == "model24":
                     for param in model.model.parameters():
                         param.requires_grad = True
                 else:
