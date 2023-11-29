@@ -10,30 +10,15 @@ from nets.efficientnetb1 import efficientnet_b1
 from nets.efficientnetb2 import efficientnet_b2
 from nets.efficientnetb3 import efficientnet_b3
 from nets.efficientnetb4 import efficientnet_b4
+from nets.efficientnetb5 import efficientnet_b5
 from nets.efficientnetb6 import efficientnet_b6
 from torchvision.models.shufflenetv2 import shufflenet_v2_x0_5, shufflenet_v2_x1_0, shufflenet_v2_x1_5, shufflenet_v2_x2_0
-from torchvision.models.regnet import regnet_x_800mf, regnet_x_1_6gf
+from torchvision.models.regnet import regnet_x_800mf, regnet_x_400mf, regnet_x_3_2gf, regnet_x_1_6gf, regnet_x_8gf, regnet_x_16gf
 from nets.models.ghostnet import ghostnet
-from nets.models.gghostnet import g_ghost_regnetx_080
+from nets.models.gghostnet import g_ghost_regnetx_080, g_ghost_regnetx_032,g_ghost_regnetx_040
 from nets.models.fasternet import FasterNet
+from torchvision.models.resnet import resnet18, resnet34, resnet50, resnet101
 from nets.vgg import vgg as add_vgg
-from nets.mobilenetv2_bigadd import MobileNetV2_bigadd
-from nets.mobilenetv2bigadd1 import MobileNetV2bigadd1
-from nets.mobilenetv2_bigadd2 import MobileNetV2_bigadd2
-from nets.mobilenetv2bigadd3 import MobileNetV2bigadd3
-from nets.mobilenetv2bigadd4 import MobileNetV2bigadd4
-from nets.mobilenetv2bigadd5 import MobileNetV2bigadd5
-from nets.model8 import model8
-from nets.model9 import model9
-from nets.model11 import model11
-from nets.model10 import model10
-from nets.model12 import model12
-from nets.model13 import model13
-from nets.model14 import model14
-from nets.model15 import model15
-from nets.model16 import model16
-from nets.model20 import model20
-from nets.model24 import model24
 class L2Norm(nn.Module):
     def __init__(self,n_channels, scale):
         super(L2Norm,self).__init__()
@@ -185,6 +170,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'efficientnetb2':
             self.mobilenet = efficientnet_b2(pretrained).features
             self.extras = add_extras(1408, backbone_name)
@@ -206,6 +192,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'efficientnetb3':
             self.mobilenet = efficientnet_b3(pretrained).features
             self.extras = add_extras(1536, backbone_name)
@@ -227,6 +214,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'efficientnetb4':
             self.mobilenet = efficientnet_b4(pretrained).features
             self.extras = add_extras(1792, backbone_name)
@@ -248,6 +236,29 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'efficientnetb5':
+            self.mobilenet = efficientnet_b5(pretrained).features
+            self.extras = add_extras(2048, backbone_name)
+            self.L2Norm = L2Norm(176, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            backbone_source = [5, -1]
+            for k, v in enumerate(backbone_source):
+                if v==5:
+                    loc_layers += [nn.Conv2d(self.mobilenet[v][6].out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                    conf_layers += [
+                        nn.Conv2d(self.mobilenet[v][6].out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                else:
+                    loc_layers += [nn.Conv2d(self.mobilenet[v].out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                    conf_layers += [
+                        nn.Conv2d(self.mobilenet[v].out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'efficientnetb6':
             self.mobilenet = efficientnet_b6(pretrained).features
             self.extras = add_extras(2304, backbone_name)
@@ -269,6 +280,79 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'resnet18':
+            self.mobilenet = resnet18(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(512, backbone_name)
+            self.L2Norm = L2Norm(256, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(256, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(256, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(512, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(512, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'resnet34':
+            self.mobilenet = resnet34(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(512, backbone_name)
+            self.L2Norm = L2Norm(256, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(256, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(256, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(512, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(512, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'resnet50':
+            self.mobilenet = resnet50(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(2048, backbone_name)
+            self.L2Norm = L2Norm(1024, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(1024, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1024, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(2048, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(2048, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'resnet101':
+            self.mobilenet = resnet101(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(2048, backbone_name)
+            self.L2Norm = L2Norm(1024, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(1024, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1024, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(2048, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(2048, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'ghostnet':
             self.mobilenet = ghostnet()
             self.mobilenet.global_pool = nn.Identity()
@@ -288,6 +372,45 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'gghostnet032':
+            self.mobilenet = g_ghost_regnetx_032()
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.mobilenet.dropout = nn.Identity()
+            self.extras = add_extras(1008, backbone_name)
+            self.L2Norm = L2Norm(432, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(432, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(432, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(1008, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1008, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'gghostnet040':
+            self.mobilenet = g_ghost_regnetx_040()
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.mobilenet.dropout = nn.Identity()
+            self.extras = add_extras(1360, backbone_name)
+            self.L2Norm = L2Norm(560, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(560, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(560, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(1360, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1360, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'gghostnet080':
             self.mobilenet = g_ghost_regnetx_080()
             self.mobilenet.avgpool = nn.Identity()
@@ -306,6 +429,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'shufflenetv205':
             self.mobilenet = shufflenet_v2_x0_5(pretrained)
             self.mobilenet.avgpool = nn.Identity()
@@ -323,6 +447,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'shufflenetv210':
             self.mobilenet = shufflenet_v2_x1_0(pretrained)
             self.mobilenet.avgpool = nn.Identity()
@@ -340,6 +465,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'shufflenetv215':
             self.mobilenet = shufflenet_v2_x1_5(pretrained)
             self.mobilenet.avgpool = nn.Identity()
@@ -357,6 +483,25 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'shufflenetv220':
+            self.mobilenet = shufflenet_v2_x2_0(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(2048, backbone_name)
+            self.L2Norm = L2Norm(488, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(488, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(488, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(2048, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(2048, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'fasternet':
             self.mobilenet = FasterNet()
             self.mobilenet.head = nn.Identity()
@@ -374,6 +519,25 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
+        elif backbone_name == 'regnetmf400':
+            self.mobilenet = regnet_x_400mf(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(400, backbone_name)
+            self.L2Norm = L2Norm(160, 20)
+            mbox = [6, 6, 6, 6, 6, 6]
+
+            loc_layers = []
+            conf_layers = []
+            loc_layers += [nn.Conv2d(160, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(160, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(400, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(400, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            for k, v in enumerate(self.extras, 2):
+                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
+                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'regnetmf800':
             self.mobilenet = regnet_x_800mf(pretrained)
             self.mobilenet.avgpool = nn.Identity()
@@ -391,6 +555,7 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
+                
         elif backbone_name == 'regnetgf1_6':
             self.mobilenet = regnet_x_1_6gf(pretrained)
             self.mobilenet.avgpool = nn.Identity()
@@ -408,275 +573,57 @@ class SSD300(nn.Module):
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd':
-            self.model = MobileNetV2_bigadd()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
+                
+        elif backbone_name == 'regnetgf3_2':
+            self.mobilenet = regnet_x_3_2gf(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(1008, backbone_name)
+            self.L2Norm = L2Norm(432, 20)
             mbox = [6, 6, 6, 6, 6, 6]
 
             loc_layers = []
             conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(432, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(432, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(1008, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1008, mbox[1] * num_classes, kernel_size=3, padding=1)]
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd1':
-            self.model = MobileNetV2bigadd1()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
+                
+        elif backbone_name == 'regnetgf8':
+            self.mobilenet = regnet_x_8gf(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(1920, backbone_name)
+            self.L2Norm = L2Norm(720, 20)
             mbox = [6, 6, 6, 6, 6, 6]
 
             loc_layers = []
             conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(720, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(720, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(1920, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(1920, mbox[1] * num_classes, kernel_size=3, padding=1)]
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd2':
-            self.model = MobileNetV2_bigadd2()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
+                
+        elif backbone_name == 'regnetgf16':
+            self.mobilenet = regnet_x_16gf(pretrained)
+            self.mobilenet.avgpool = nn.Identity()
+            self.mobilenet.fc = nn.Identity()
+            self.extras = add_extras(2048, backbone_name)
+            self.L2Norm = L2Norm(896, 20)
             mbox = [6, 6, 6, 6, 6, 6]
 
             loc_layers = []
             conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd3':
-            self.model = MobileNetV2bigadd3()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd4':
-            self.model = MobileNetV2bigadd4()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'mobilenetv2_bigadd5':
-            self.model = MobileNetV2bigadd5()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model8':
-            self.model = model8()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model9':
-            self.model = model9()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model10':
-            self.model = model10()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model11':
-            self.model = model11()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model12':
-            self.model = model12()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model13':
-            self.model = model13()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model14':
-            self.model = model14()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model15':
-            self.model = model15()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model16':
-            self.model = model16()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model20':
-            self.model = model20()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
-            for k, v in enumerate(self.extras, 2):
-                loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
-                conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
-        elif backbone_name == 'model24':
-            self.model = model20()
-            self.model.fc = nn.Identity()
-            self.extras = add_extras(1280, backbone_name)
-            self.L2Norm = L2Norm(96, 20)
-            mbox = [6, 6, 6, 6, 6, 6]
-
-            loc_layers = []
-            conf_layers = []
-            loc_layers += [nn.Conv2d(96, mbox[0] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(96, mbox[0] * num_classes, kernel_size=3, padding=1)]
-            loc_layers += [nn.Conv2d(1280, mbox[1] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(1280, mbox[1] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(896, mbox[0] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(896, mbox[0] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(2048, mbox[1] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(2048, mbox[1] * num_classes, kernel_size=3, padding=1)]
             for k, v in enumerate(self.extras, 2):
                 loc_layers += [nn.Conv2d(v.out_channels, mbox[k] * 4, kernel_size=3, padding=1)]
                 conf_layers += [nn.Conv2d(v.out_channels, mbox[k] * num_classes, kernel_size=3, padding=1)]
@@ -723,9 +670,44 @@ class SSD300(nn.Module):
         elif self.backbone_name == 'efficientnetb4':
             for k in range(6):
                 x = self.mobilenet[k](x)
+        elif self.backbone_name == 'efficientnetb5':
+            for k in range(6):
+                x = self.mobilenet[k](x)
         elif self.backbone_name == 'efficientnetb6':
             for k in range(6):
                 x = self.mobilenet[k](x)
+        elif self.backbone_name == 'resnet18':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.maxpool(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
+        elif self.backbone_name == 'resnet34':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.maxpool(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
+        elif self.backbone_name == 'resnet50':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.maxpool(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
+        elif self.backbone_name == 'resnet101':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.maxpool(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
         elif self.backbone_name == 'ghostnet':
             x = self.mobilenet.conv_stem(x)
             x = self.mobilenet.bn1(x)
@@ -736,6 +718,20 @@ class SSD300(nn.Module):
             x = self.mobilenet.blocks[3](x)
             x = self.mobilenet.blocks[4](x)
             x = self.mobilenet.blocks[5](x)
+        elif self.backbone_name == 'gghostnet032':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
+        elif self.backbone_name == 'gghostnet040':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.bn1(x)
+            x = self.mobilenet.relu(x)
+            x = self.mobilenet.layer1(x)
+            x = self.mobilenet.layer2(x)
+            x = self.mobilenet.layer3(x)
         elif self.backbone_name == 'gghostnet080':
             x = self.mobilenet.conv1(x)
             x = self.mobilenet.bn1(x)
@@ -758,6 +754,11 @@ class SSD300(nn.Module):
             x = self.mobilenet.maxpool(x)
             x = self.mobilenet.stage2(x)
             x = self.mobilenet.stage3(x)
+        elif self.backbone_name == 'shufflenetv220':
+            x = self.mobilenet.conv1(x)
+            x = self.mobilenet.maxpool(x)
+            x = self.mobilenet.stage2(x)
+            x = self.mobilenet.stage3(x)
         elif self.backbone_name == 'fasternet':
             x = self.mobilenet.patch_embed(x)
             x = self.mobilenet.stages[0](x)
@@ -765,7 +766,11 @@ class SSD300(nn.Module):
             x = self.mobilenet.stages[2](x)
             x = self.mobilenet.stages[3](x)
             x = nn.functional.interpolate(x, size=[19, 19], mode='nearest')
-
+        elif self.backbone_name == 'regnetmf400':
+            x = self.mobilenet.stem(x)
+            x = self.mobilenet.trunk_output.block1(x)
+            x = self.mobilenet.trunk_output.block2(x)
+            x = self.mobilenet.trunk_output.block3(x)
         elif self.backbone_name == 'regnetmf800':
             x = self.mobilenet.stem(x)
             x = self.mobilenet.trunk_output.block1(x)
@@ -776,125 +781,21 @@ class SSD300(nn.Module):
             x = self.mobilenet.trunk_output.block1(x)
             x = self.mobilenet.trunk_output.block2(x)
             x = self.mobilenet.trunk_output.block3(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd1':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd2':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd3':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd4':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd5':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model8':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model9':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model10':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model11':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model12':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model13':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model14':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model15':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model16':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model20':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
-        elif self.backbone_name == 'model24':
-            x = self.model.conv1(x)
-            x = self.model.bottleneck1(x)
-            x = self.model.bottleneck2(x)
-            x = self.model.bottleneck3(x)
-            x = self.model.bottleneck4(x)
-            x = self.model.bottleneck5(x)
+        elif self.backbone_name == 'regnetgf3_2':
+            x = self.mobilenet.stem(x)
+            x = self.mobilenet.trunk_output.block1(x)
+            x = self.mobilenet.trunk_output.block2(x)
+            x = self.mobilenet.trunk_output.block3(x)
+        elif self.backbone_name == 'regnetgf8':
+            x = self.mobilenet.stem(x)
+            x = self.mobilenet.trunk_output.block1(x)
+            x = self.mobilenet.trunk_output.block2(x)
+            x = self.mobilenet.trunk_output.block3(x)
+        elif self.backbone_name == 'regnetgf16':
+            x = self.mobilenet.stem(x)
+            x = self.mobilenet.trunk_output.block1(x)
+            x = self.mobilenet.trunk_output.block2(x)
+            x = self.mobilenet.trunk_output.block3(x)
         #---------------------------#
         #   conv4_3的内容
         #   需要进行L2标准化
@@ -933,9 +834,16 @@ class SSD300(nn.Module):
         elif self.backbone_name == 'efficientnetb4':
             for k in range(6, len(self.mobilenet)):
                 x = self.mobilenet[k](x)
+        elif self.backbone_name == 'efficientnetb5':
+            for k in range(6, len(self.mobilenet)):
+                x = self.mobilenet[k](x)
         elif self.backbone_name == 'efficientnetb6':
             for k in range(6, len(self.mobilenet)):
                 x = self.mobilenet[k](x)
+        elif self.backbone_name == 'gghostnet032':
+            x = self.mobilenet.layer4(x)
+        elif self.backbone_name == 'gghostnet040':
+            x = self.mobilenet.layer4(x)
         elif self.backbone_name == 'gghostnet080':
             x = self.mobilenet.layer4(x)
         elif self.backbone_name == 'ghostnet':
@@ -952,83 +860,34 @@ class SSD300(nn.Module):
         elif self.backbone_name == 'shufflenetv215':
             x = self.mobilenet.stage4(x)
             x = self.mobilenet.conv5(x)
+        elif self.backbone_name == 'shufflenetv220':
+            x = self.mobilenet.stage4(x)
+            x = self.mobilenet.conv5(x)
+        elif self.backbone_name == 'resnet18':
+            x = self.mobilenet.layer4(x)
+        elif self.backbone_name == 'resnet50':
+            x = self.mobilenet.layer4(x)
+        elif self.backbone_name == 'resnet34':
+            x = self.mobilenet.layer4(x)
+        elif self.backbone_name == 'resnet101':
+            x = self.mobilenet.layer4(x)
         elif self.backbone_name == 'fasternet':
             x = self.mobilenet.stages[4](x)
             x = self.mobilenet.stages[5](x)
             x = self.mobilenet.stages[6](x)
             x = nn.functional.interpolate(x, size=[10, 10], mode='nearest')
+        elif self.backbone_name == 'regnetmf400':
+            x = self.mobilenet.trunk_output.block4(x)
         elif self.backbone_name == 'regnetmf800':
             x = self.mobilenet.trunk_output.block4(x)
         elif self.backbone_name == 'regnetgf1_6':
             x = self.mobilenet.trunk_output.block4(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd1':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd2':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd3':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd4':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'mobilenetv2_bigadd5':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model8':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model9':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model10':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model11':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model12':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model13':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model14':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model15':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model16':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model20':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
-        elif self.backbone_name == 'model24':
-            x = self.model.bottleneck6(x)
-            x = self.model.bottleneck7(x)
-            x = self.model.conv2(x)
+        elif self.backbone_name == 'regnetgf3_2':
+            x = self.mobilenet.trunk_output.block4(x)
+        elif self.backbone_name == 'regnetgf8':
+            x = self.mobilenet.trunk_output.block4(x)
+        elif self.backbone_name == 'regnetgf16':
+            x = self.mobilenet.trunk_output.block4(x)
         sources.append(x)
         #-------------------------------------------------------------#
         #   在add_extras获得的特征层里
@@ -1040,73 +899,7 @@ class SSD300(nn.Module):
             if self.backbone_name == "vgg":
                 if k % 2 == 1:
                     sources.append(x)
-            elif self.backbone_name == "mobilenetv2":
-                sources.append(x)
-            elif self.backbone_name == "mobilenetv3large":
-                sources.append(x)
-            elif self.backbone_name == "mobilenetv3small":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb0":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb1":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb2":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb3":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb4":
-                sources.append(x)
-            elif self.backbone_name == "efficientnetb6":
-                sources.append(x)
-            elif self.backbone_name == "ghostnet":
-                sources.append(x)
-            elif self.backbone_name == "gghostnet080":
-                sources.append(x)
-            elif self.backbone_name == "shufflenetv205":
-                sources.append(x)
-            elif self.backbone_name == "shufflenetv210":
-                sources.append(x)
-            elif self.backbone_name == "shufflenetv215":
-                sources.append(x)
-            elif self.backbone_name == "regnetmf800":
-                sources.append(x)
-            elif self.backbone_name == "fasternet":
-                sources.append(x)
-            elif self.backbone_name == "regnetgf1_6":
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd':
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd1':
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd2':
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd3':
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd4':
-                sources.append(x)
-            elif self.backbone_name == 'mobilenetv2_bigadd5':
-                sources.append(x)
-            elif self.backbone_name == 'model8':
-                sources.append(x)
-            elif self.backbone_name == 'model9':
-                sources.append(x)
-            elif self.backbone_name == 'model10':
-                sources.append(x)
-            elif self.backbone_name == 'model11':
-                sources.append(x)
-            elif self.backbone_name == 'model12':
-                sources.append(x)
-            elif self.backbone_name == 'model13':
-                sources.append(x)
-            elif self.backbone_name == 'model14':
-                sources.append(x)
-            elif self.backbone_name == 'model15':
-                sources.append(x)
-            elif self.backbone_name == 'model16':
-                sources.append(x)
-            elif self.backbone_name == 'model20':
-                sources.append(x)
-            elif self.backbone_name == 'model24':
+            else: 
                 sources.append(x)
         #-------------------------------------------------------------#
         #   为获得的6个有效特征层添加回归预测和分类预测
